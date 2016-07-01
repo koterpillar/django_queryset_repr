@@ -17,3 +17,5 @@ Status
 ------
 
 Under development.
+
+[django]: https://www.djangoproject.com/
