@@ -1,0 +1,9 @@
+"""
+Test application configuration.
+"""
+
+from django.apps import AppConfig
+
+
+class GardenConfig(AppConfig):
+    name = 'garden'

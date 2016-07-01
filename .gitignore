@@ -1,0 +1,6 @@
+__pycache__
+*.pyc
+/.eggs
+/django_queryset_repr.egg-info
+/build/
+/dist/
