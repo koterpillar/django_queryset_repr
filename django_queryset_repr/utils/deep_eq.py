@@ -1,9 +1,6 @@
 """Deep (structural) equality function."""
 
 
-SENTINEL = object()  # Object distinct from anything defined elsewhere
-
-
 def deep_eq(a, b):
     """
     Compare two objects structurally.
@@ -18,40 +15,60 @@ def deep_eq(a, b):
     return all(
         a_attr == b_attr
         for a_attr, b_attr
-        in zip(gen_attrs(a, set()), gen_attrs(b, set()))
+        in zip(gen_attrs(a, '', set()), gen_attrs(b, '', set()))
     )
 
 
-def gen_attrs(obj, seen):
+def assert_deep_eq(a, b):
+    """
+    Assert the two objects are structurally equal.
+
+    On failure, a message explaining where is the difference found is produced.
+    """
+
+    for (path, a_attr), (_, b_attr) in zip(
+            gen_attrs(a, '', set()), gen_attrs(b, '', set())):
+        if a_attr != b_attr:
+            raise AssertionError("{} is not {} (at path {})".format(
+                a_attr, b_attr, path))
+
+
+def gen_attrs(obj, prefix, seen):
     """
     An iterable of attributes to compare for structural equality.
 
     The iterables are element-by-element equal for arguments that are
     structurally the same.
 
-    If an object is in 'seen', it's assumed to have been yielded already.
+    If an object is in 'seen', it's assumed to have been compared already.
     """
 
-    if obj in seen:
+    if id(obj) in seen:
         return
-    seen.add(obj)
+    seen.add(id(obj))
 
-    yield type(obj)
+    yield prefix + '.__class__', type(obj)
 
-    has_dict = hasattr(obj, '__dict__')
-    yield has_dict
-    if has_dict:
-        keys = sorted(obj.__dict__.keys())
-        yield keys
+    # Since the types of the objects were compared, the results of all these
+    # checks can be assumed to be the same for both objects
+    if isinstance(obj, dict):
+        keys = sorted(obj.keys())
+        yield prefix + '.keys()', keys
         for key in keys:
-            yield from gen_attrs(getattr(obj, key), seen)
+            yield from gen_attrs(obj[key], prefix + '[{!r}]'.format(key), seen)
+
+    elif hasattr(obj, '__dict__'):
+        keys = sorted(obj.__dict__.keys())
+        yield prefix + '.__dict__', keys
+        for key in keys:
+            yield from gen_attrs(getattr(obj, key), prefix + '.' + key, seen)
+
+    elif hasattr(type(obj), '__slots__'):
+        slots = getattr(obj, '__slots__')
+        yield slots
+        for slot in slots:
+            yield prefix + '.__hasattr__({!r})'.format(slot), hasattr(obj, slot)
+            yield from gen_attrs(getattr(obj, slot), prefix + '.' + slot, seen)
+
     else:
-        has_slots = hasattr(type(obj), '__slots__')
-        yield has_slots
-        if has_slots:
-            slots = getattr(obj, '__slots__')
-            yield slots
-            for slot in slots:
-                yield from gen_attrs(getattr(obj, slot, SENTINEL), seen)
-        else:
-            yield obj
+        yield prefix, obj
