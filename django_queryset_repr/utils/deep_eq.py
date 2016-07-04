@@ -1,5 +1,7 @@
 """Deep (structural) equality function."""
 
+import types
+
 
 def deep_eq(a, b):
     """
@@ -51,11 +53,19 @@ def gen_attrs(obj, prefix, seen):
 
     # Since the types of the objects were compared, the results of all these
     # checks can be assumed to be the same for both objects
-    if isinstance(obj, dict):
+    if isinstance(obj, types.ModuleType):
+        yield prefix + '.__name__', obj.__name__
+
+    elif isinstance(obj, dict):
         keys = sorted(obj.keys())
         yield prefix + '.keys()', keys
         for key in keys:
             yield from gen_attrs(obj[key], prefix + '[{!r}]'.format(key), seen)
+
+    elif isinstance(obj, (list, tuple)):
+        yield prefix + '.__len__()', len(obj)
+        for idx, item in enumerate(obj):
+            yield from gen_attrs(item, prefix + '[{!r}]'.format(idx), seen)
 
     elif hasattr(obj, '__dict__'):
         keys = sorted(obj.__dict__.keys())

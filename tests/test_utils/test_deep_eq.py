@@ -28,8 +28,8 @@ class DeepEqTest(unittest.TestCase):
     def assert_deep_equal(self, a, b):
         """Assert that the two objects are tested as structurally the same."""
 
-        self.assertTrue(deep_eq(a, b))
         assert_deep_eq(a, b)
+        self.assertTrue(deep_eq(a, b))
 
     def assert_not_deep_equal(self, a, b, expected_path):
         """
@@ -139,3 +139,42 @@ class DeepEqTest(unittest.TestCase):
 
         self.assert_deep_equal(d1, d1_same)
         self.assert_not_deep_equal(d1, d2, '[\'foo\']')
+
+    def test_lists(self):
+        """Test lists."""
+
+        l1 = [1, 2, 3]
+        l1_same = [1, 2, 3]
+
+        l2 = [1, 20, 3]
+        l3 = [1, 2]
+        l4 = [1, 2, 3, 4]
+
+        self.assert_deep_equal(l1, l1_same)
+        self.assert_not_deep_equal(l1, l2, '[1]')
+        self.assert_not_deep_equal(l1, l3, '.__len__()')
+        self.assert_not_deep_equal(l1, l4, '.__len__()')
+
+    def test_recursive_lists(self):
+        """Test recursive lists."""
+
+        l1 = [1]
+        l1.insert(0, l1)
+
+        l1_same = [1]
+        l1_same.insert(0, l1_same)
+
+        l2 = [2]
+        l2.insert(0, l2)
+
+        self.assert_deep_equal(l1, l1_same)
+        self.assert_not_deep_equal(l1, l2, '[1]')
+
+    def test_module(self):
+        """Test modules."""
+
+        import sys
+        import os
+
+        self.assert_deep_equal(sys, sys)
+        self.assert_not_deep_equal(sys, os, '.__name__')
