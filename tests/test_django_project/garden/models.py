@@ -8,3 +8,10 @@ class Tree(models.Model):
 
     color = models.CharField(max_length=100)
     height = models.IntegerField()
+
+
+class Leaf(models.Model):
+    """A tree's leaf."""
+
+    tree = models.ForeignKey(Tree, related_name='leaves')
+    size = models.IntegerField()
